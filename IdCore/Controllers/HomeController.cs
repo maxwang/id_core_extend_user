@@ -11,9 +11,11 @@ namespace IdCore.Controllers
     {
         public IActionResult Index()
         {
+            var user = HttpContext.User;
+
             return View();
 
-            //var user = HttpContext.User as ClaimsPrincipal;
+            
             
 
         }

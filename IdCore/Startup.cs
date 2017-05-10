@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using IdCore.Data;
 using IdCore.Models;
 using IdCore.Services;
+using Microsoft.AspNetCore.Authentication;
+using IdCore.Extension;
 
 namespace IdCore
 {
@@ -43,11 +45,18 @@ namespace IdCore
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+                {
+                    options.Password.RequiredLength = 6;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = false;
+                })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
             services.AddMvc();
+
+            services.AddTransient<IClaimsTransformer, SMSClaimsTransformer>();
 
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
@@ -74,6 +83,17 @@ namespace IdCore
             app.UseStaticFiles();
 
             app.UseIdentity();
+
+            //app.UseClaimsTransformation(new ClaimsTransformationOptions
+            //{
+            //    Transformer = new SMSClaimsTransformer()
+            //});
+            app.UseClaimsTransformation(async (context) =>
+            {
+                IClaimsTransformer transformer = context.Context.RequestServices.GetRequiredService<IClaimsTransformer>();
+                return await transformer.TransformAsync(context);
+            });
+
 
             // Add external authentication middleware below. To configure them please see https://go.microsoft.com/fwlink/?LinkID=532715
 
